@@ -66,19 +66,39 @@ def main():
         # Stock input
         symbol_input = st.text_input(
             "Enter Stock Symbol",
-            placeholder="e.g., RELIANCE, TCS, HDFCBANK",
-            help="Enter any valid NSE stock symbol without .NS suffix. Examples: RELIANCE, TCS, INFY, WIPRO, MARUTI, TATAMOTORS, SUNPHARMA, AXISBANK, LT, ASIANPAINT"
+            placeholder="e.g., RELIANCE, TCS, TATASTEEL",
+            help="Enter any valid NSE stock symbol without .NS suffix"
         )
+
+        # Example stocks hint
+        st.caption("Examples: RELIANCE, TCS, TATASTEEL, ADANIENT, M&M, ONGC, NTPC, POWERGRID, COALINDIA, BAJAJ-AUTO")
 
         # Quick select
         st.subheader("Quick Select")
         selected_quick = st.selectbox(
             "Popular Stocks",
-            ["Select..."] + [s.replace('.NS', '') for s in DEFAULT_STOCKS]
+            ["Select..."] + sorted(set([s.replace('.NS', '') for s in DEFAULT_STOCKS]))
         )
 
         if selected_quick != "Select...":
             symbol_input = selected_quick
+
+        # Sector-based selection
+        with st.expander("Browse by Sector"):
+            sector_choice = st.selectbox(
+                "Select Sector",
+                ["Select..."] + list(SECTORS.keys())
+            )
+            if sector_choice != "Select...":
+                sector_stocks = [s.replace('.NS', '') for s in SECTORS.get(sector_choice, [])]
+                st.write(", ".join(sector_stocks))
+                sector_stock = st.selectbox(
+                    f"Stocks in {sector_choice}",
+                    ["Select..."] + sector_stocks,
+                    key="sector_stock"
+                )
+                if sector_stock != "Select...":
+                    symbol_input = sector_stock
 
         # Analysis period
         period = st.selectbox(

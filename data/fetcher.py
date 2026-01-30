@@ -122,33 +122,46 @@ class StockDataFetcher:
                 logger.info(f"Using cached info for {symbol}")
                 return cached_info
 
-        try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
+        # Try NSE first, then BSE
+        suffixes_to_try = ['.NS', '.BO'] if symbol.endswith('.NS') else [symbol[-3:], '.NS', '.BO']
+        base_symbol = symbol.replace('.NS', '').replace('.BO', '')
 
-            # More lenient validation - check if we have any meaningful data
-            if not info:
-                return None
+        for suffix in suffixes_to_try:
+            try_symbol = base_symbol + suffix if not base_symbol.endswith(suffix) else base_symbol
 
-            # Check for common fields that indicate valid stock data
-            has_valid_data = any(key in info for key in [
-                'symbol', 'shortName', 'longName', 'currentPrice',
-                'regularMarketPrice', 'previousClose', 'marketCap'
-            ])
+            try:
+                ticker = yf.Ticker(try_symbol)
+                info = ticker.info
 
-            if not has_valid_data:
-                logger.warning(f"No valid data fields found for {symbol}")
-                return None
+                # Check if we got valid data
+                if not info or not isinstance(info, dict):
+                    continue
 
-            # Cache the info
-            if self.use_cache and self.cache:
-                self.cache.save_info(symbol, info)
+                # Check for common fields that indicate valid stock data
+                has_valid_data = any(key in info for key in [
+                    'shortName', 'longName', 'currentPrice',
+                    'regularMarketPrice', 'previousClose', 'marketCap',
+                    'regularMarketOpen', 'dayHigh', 'dayLow'
+                ])
 
-            return info
+                if not has_valid_data:
+                    continue
 
-        except Exception as e:
-            logger.error(f"Error fetching info for {symbol}: {e}")
-            return None
+                # Valid data found
+                logger.info(f"Found valid data for {try_symbol}")
+
+                # Cache the info
+                if self.use_cache and self.cache:
+                    self.cache.save_info(symbol, info)
+
+                return info
+
+            except Exception as e:
+                logger.warning(f"Error trying {try_symbol}: {e}")
+                continue
+
+        logger.error(f"Could not find valid data for {symbol}")
+        return None
 
     def get_financials(self, symbol: str) -> Dict[str, Optional[pd.DataFrame]]:
         """

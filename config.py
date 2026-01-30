@@ -10,28 +10,26 @@ APP_VERSION = "1.0.0"
 YAHOO_FINANCE_SUFFIX_NSE = ".NS"
 YAHOO_FINANCE_SUFFIX_BSE = ".BO"
 
-# Default stock symbols for testing
+# Default stock symbols for testing (Nifty 50 and popular stocks)
 DEFAULT_STOCKS = [
-    "RELIANCE.NS",
-    "TCS.NS",
-    "INFY.NS",
-    "HDFCBANK.NS",
-    "ICICIBANK.NS",
-    "HINDUNILVR.NS",
-    "ITC.NS",
-    "SBIN.NS",
-    "BHARTIARTL.NS",
-    "KOTAKBANK.NS",
-    "LT.NS",
-    "AXISBANK.NS",
-    "MARUTI.NS",
-    "SUNPHARMA.NS",
-    "TATAMOTORS.NS",
-    "WIPRO.NS",
-    "ASIANPAINT.NS",
-    "BAJFINANCE.NS",
-    "HCLTECH.NS",
-    "TITAN.NS",
+    # Large Cap - IT
+    "TCS.NS", "INFY.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS",
+    # Large Cap - Banking
+    "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "KOTAKBANK.NS", "AXISBANK.NS",
+    # Large Cap - Oil & Gas
+    "RELIANCE.NS", "ONGC.NS", "NTPC.NS", "POWERGRID.NS", "COALINDIA.NS",
+    # Large Cap - Auto
+    "MARUTI.NS", "TATAMOTORS.NS", "M&M.NS", "BAJAJ-AUTO.NS", "HEROMOTOCO.NS",
+    # Large Cap - Pharma
+    "SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS", "DIVISLAB.NS", "APOLLOHOSP.NS",
+    # Large Cap - FMCG
+    "HINDUNILVR.NS", "ITC.NS", "NESTLEIND.NS", "BRITANNIA.NS", "DABUR.NS",
+    # Large Cap - Metals
+    "TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "VEDL.NS",
+    # Large Cap - Infrastructure
+    "LT.NS", "ADANIENT.NS", "ADANIPORTS.NS", "ULTRACEMCO.NS", "GRASIM.NS",
+    # Large Cap - Others
+    "BHARTIARTL.NS", "ASIANPAINT.NS", "BAJFINANCE.NS", "TITAN.NS", "HDFC.NS",
 ]
 
 # Popular sectors and their representative stocks
