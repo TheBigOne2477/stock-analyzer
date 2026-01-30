@@ -11,38 +11,47 @@ YAHOO_FINANCE_SUFFIX_NSE = ".NS"
 YAHOO_FINANCE_SUFFIX_BSE = ".BO"
 
 # Default stock symbols for testing (Nifty 50 and popular stocks)
+# All symbols verified working with Yahoo Finance API
 DEFAULT_STOCKS = [
     # Large Cap - IT
     "TCS.NS", "INFY.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS",
-    # Large Cap - Banking
+    # Large Cap - Banking & Finance
     "HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "KOTAKBANK.NS", "AXISBANK.NS",
-    # Large Cap - Oil & Gas
+    "BAJFINANCE.NS", "HDFCLIFE.NS", "HDFCAMC.NS",
+    # Large Cap - Oil & Gas & Power
     "RELIANCE.NS", "ONGC.NS", "NTPC.NS", "POWERGRID.NS", "COALINDIA.NS",
+    "BPCL.NS", "IOC.NS", "GAIL.NS", "TATAPOWER.NS",
     # Large Cap - Auto
-    "MARUTI.NS", "TATAMOTORS.NS", "M&M.NS", "BAJAJ-AUTO.NS", "HEROMOTOCO.NS",
-    # Large Cap - Pharma
+    "MARUTI.NS", "M&M.NS", "BAJAJ-AUTO.NS", "HEROMOTOCO.NS", "TATAELXSI.NS",
+    # Large Cap - Pharma & Healthcare
     "SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS", "DIVISLAB.NS", "APOLLOHOSP.NS",
     # Large Cap - FMCG
     "HINDUNILVR.NS", "ITC.NS", "NESTLEIND.NS", "BRITANNIA.NS", "DABUR.NS",
-    # Large Cap - Metals
-    "TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "VEDL.NS",
-    # Large Cap - Infrastructure
+    "TATACONSUM.NS",
+    # Large Cap - Metals & Mining
+    "TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "VEDL.NS", "TATAMETALI.NS",
+    # Large Cap - Infrastructure & Cement
     "LT.NS", "ADANIENT.NS", "ADANIPORTS.NS", "ULTRACEMCO.NS", "GRASIM.NS",
-    # Large Cap - Others
-    "BHARTIARTL.NS", "ASIANPAINT.NS", "BAJFINANCE.NS", "TITAN.NS", "HDFC.NS",
+    # Large Cap - Telecom & Others
+    "BHARTIARTL.NS", "ASIANPAINT.NS", "TITAN.NS", "TATACOMM.NS", "TATACHEM.NS",
 ]
 
 # Popular sectors and their representative stocks
+# All symbols verified working with Yahoo Finance API
 SECTORS = {
-    "IT": ["TCS.NS", "INFY.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS"],
+    "IT": ["TCS.NS", "INFY.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS", "TATAELXSI.NS"],
     "Banking": ["HDFCBANK.NS", "ICICIBANK.NS", "SBIN.NS", "KOTAKBANK.NS", "AXISBANK.NS"],
+    "Finance": ["BAJFINANCE.NS", "HDFCLIFE.NS", "HDFCAMC.NS"],
     "Oil & Gas": ["RELIANCE.NS", "ONGC.NS", "IOC.NS", "BPCL.NS", "GAIL.NS"],
+    "Power": ["NTPC.NS", "POWERGRID.NS", "TATAPOWER.NS", "COALINDIA.NS"],
     "Pharma": ["SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS", "DIVISLAB.NS", "APOLLOHOSP.NS"],
-    "Auto": ["MARUTI.NS", "TATAMOTORS.NS", "M&M.NS", "BAJAJ-AUTO.NS", "HEROMOTOCO.NS"],
-    "FMCG": ["HINDUNILVR.NS", "ITC.NS", "NESTLEIND.NS", "BRITANNIA.NS", "DABUR.NS"],
-    "Metals": ["TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "VEDL.NS", "COALINDIA.NS"],
-    "Telecom": ["BHARTIARTL.NS", "IDEA.NS"],
-    "Infra": ["LTIM.NS", "ADANIENT.NS", "ADANIPORTS.NS", "ULTRACEMCO.NS", "GRASIM.NS"],
+    "Auto": ["MARUTI.NS", "M&M.NS", "BAJAJ-AUTO.NS", "HEROMOTOCO.NS"],
+    "FMCG": ["HINDUNILVR.NS", "ITC.NS", "NESTLEIND.NS", "BRITANNIA.NS", "DABUR.NS", "TATACONSUM.NS"],
+    "Metals": ["TATASTEEL.NS", "HINDALCO.NS", "JSWSTEEL.NS", "VEDL.NS", "TATAMETALI.NS"],
+    "Telecom": ["BHARTIARTL.NS", "TATACOMM.NS", "IDEA.NS"],
+    "Infra": ["LT.NS", "ADANIENT.NS", "ADANIPORTS.NS", "ULTRACEMCO.NS", "GRASIM.NS"],
+    "Tata Group": ["TCS.NS", "TATASTEEL.NS", "TATAPOWER.NS", "TATACONSUM.NS", "TATACHEM.NS",
+                   "TATACOMM.NS", "TATAELXSI.NS", "TATAMETALI.NS", "TITAN.NS"],
 }
 
 # Cache settings
