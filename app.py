@@ -66,8 +66,8 @@ def main():
         # Stock input
         symbol_input = st.text_input(
             "Enter Stock Symbol",
-            placeholder="e.g., RELIANCE, TCS",
-            help="Enter NSE stock symbol without .NS suffix"
+            placeholder="e.g., RELIANCE, TCS, HDFCBANK",
+            help="Enter any valid NSE stock symbol without .NS suffix. Examples: RELIANCE, TCS, INFY, WIPRO, MARUTI, TATAMOTORS, SUNPHARMA, AXISBANK, LT, ASIANPAINT"
         )
 
         # Quick select
@@ -121,8 +121,8 @@ def run_analysis(symbol: str, period: str, pred_horizon: int,
     """Run complete stock analysis."""
     with st.spinner(f"Analyzing {symbol}..."):
         try:
-            # Initialize components
-            fetcher = StockDataFetcher()
+            # Initialize components (disable cache for cloud deployment)
+            fetcher = StockDataFetcher(use_cache=False)
             fundamental_analyzer = FundamentalAnalyzer()
             technical_analyzer = TechnicalAnalyzer()
             valuation_model = ValuationModel()
@@ -136,6 +136,7 @@ def run_analysis(symbol: str, period: str, pred_horizon: int,
             info = fetcher.get_stock_info(symbol)
             if not info:
                 render_error(f"Could not find stock: {symbol}. Please check the symbol and try again.")
+                st.info("💡 **Tips:**\n- Use NSE symbols like RELIANCE, TCS, INFY, HDFCBANK\n- Don't add .NS suffix - it's added automatically\n- Make sure the stock is listed on NSE")
                 return
 
             # Get historical data

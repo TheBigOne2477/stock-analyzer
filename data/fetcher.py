@@ -126,7 +126,18 @@ class StockDataFetcher:
             ticker = yf.Ticker(symbol)
             info = ticker.info
 
-            if not info or 'symbol' not in info:
+            # More lenient validation - check if we have any meaningful data
+            if not info:
+                return None
+
+            # Check for common fields that indicate valid stock data
+            has_valid_data = any(key in info for key in [
+                'symbol', 'shortName', 'longName', 'currentPrice',
+                'regularMarketPrice', 'previousClose', 'marketCap'
+            ])
+
+            if not has_valid_data:
+                logger.warning(f"No valid data fields found for {symbol}")
                 return None
 
             # Cache the info

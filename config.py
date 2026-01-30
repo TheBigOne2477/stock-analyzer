@@ -22,6 +22,16 @@ DEFAULT_STOCKS = [
     "SBIN.NS",
     "BHARTIARTL.NS",
     "KOTAKBANK.NS",
+    "LT.NS",
+    "AXISBANK.NS",
+    "MARUTI.NS",
+    "SUNPHARMA.NS",
+    "TATAMOTORS.NS",
+    "WIPRO.NS",
+    "ASIANPAINT.NS",
+    "BAJFINANCE.NS",
+    "HCLTECH.NS",
+    "TITAN.NS",
 ]
 
 # Popular sectors and their representative stocks
