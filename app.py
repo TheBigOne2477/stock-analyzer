@@ -55,6 +55,20 @@ if 'analysis_data' not in st.session_state:
     st.session_state.analysis_data = {}
 
 
+def test_data_connection():
+    """Test if data fetching works."""
+    import yfinance as yf
+    try:
+        ticker = yf.Ticker("RELIANCE.NS")
+        info = ticker.info
+        price = info.get('currentPrice') or info.get('regularMarketPrice')
+        if price:
+            return True, f"Connection OK - RELIANCE price: Rs.{price}"
+        return False, "No price data received"
+    except Exception as e:
+        return False, f"Connection error: {str(e)}"
+
+
 def main():
     """Main application entry point."""
     render_header()
@@ -124,6 +138,20 @@ def main():
         analyze_button = st.button("Analyze Stock", type="primary", use_container_width=True)
 
         st.divider()
+
+        # Debug/Test section
+        with st.expander("🔧 Troubleshooting"):
+            if st.button("Test Data Connection"):
+                with st.spinner("Testing..."):
+                    success, message = test_data_connection()
+                    if success:
+                        st.success(message)
+                    else:
+                        st.error(message)
+
+            st.caption("If test fails, try refreshing the page or wait a minute.")
+
+        st.divider()
         render_disclaimer()
 
     # Main content
@@ -139,10 +167,16 @@ def main():
 def run_analysis(symbol: str, period: str, pred_horizon: int,
                  use_lstm: bool, use_xgboost: bool):
     """Run complete stock analysis."""
+
+    # Force disable LSTM on cloud (TensorFlow not installed)
+    use_lstm = False
+
     with st.spinner(f"Analyzing {symbol}..."):
         try:
             # Initialize components (disable cache for cloud deployment)
             fetcher = StockDataFetcher(use_cache=False)
+
+            st.info(f"Fetching data for {symbol}...")
             fundamental_analyzer = FundamentalAnalyzer()
             technical_analyzer = TechnicalAnalyzer()
             valuation_model = ValuationModel()
@@ -153,17 +187,35 @@ def run_analysis(symbol: str, period: str, pred_horizon: int,
             st.info("Fetching stock data...")
 
             # Validate symbol
-            info = fetcher.get_stock_info(symbol)
+            try:
+                info = fetcher.get_stock_info(symbol)
+            except Exception as e:
+                render_error(f"Error connecting to data source: {str(e)}")
+                st.info("This might be a temporary issue. Please try again in a few seconds.")
+                return
+
             if not info:
                 render_error(f"Could not find stock: {symbol}. Please check the symbol and try again.")
                 st.info("💡 **Tips:**\n- Use NSE symbols like RELIANCE, TCS, INFY, HDFCBANK\n- Don't add .NS suffix - it's added automatically\n- Make sure the stock is listed on NSE")
+                # Show some working examples
+                st.write("**Try these stocks:** RELIANCE, TCS, INFY, TATASTEEL, HDFCBANK, SBIN, ITC, LT")
                 return
 
+            st.success(f"Found: {info.get('longName', symbol)}")
+
             # Get historical data
-            df = fetcher.get_historical_data(symbol, period=period)
+            try:
+                df = fetcher.get_historical_data(symbol, period=period)
+            except Exception as e:
+                render_error(f"Error fetching price data: {str(e)}")
+                return
+
             if df is None or df.empty:
                 render_error(f"No price data available for {symbol}")
+                st.info("The stock might be newly listed or have limited trading history.")
                 return
+
+            st.info(f"Loaded {len(df)} days of price data")
 
             # Get metrics and financials
             metrics = fetcher.get_key_metrics(symbol)
