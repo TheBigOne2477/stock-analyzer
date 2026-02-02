@@ -7,12 +7,32 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 import logging
+import time
 
 from .cache import CacheManager
 from utils.helpers import normalize_stock_symbol
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def retry_on_failure(max_retries: int = 3, delay: float = 1.0):
+    """Decorator to retry function on failure."""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    logger.warning(f"Attempt {attempt + 1} failed: {e}")
+                    if attempt < max_retries - 1:
+                        time.sleep(delay * (attempt + 1))
+            logger.error(f"All {max_retries} attempts failed")
+            raise last_exception
+        return wrapper
+    return decorator
 
 
 class StockDataFetcher:
@@ -77,31 +97,47 @@ class StockDataFetcher:
                 logger.info(f"Using cached data for {symbol}")
                 return cached_data
 
-        # Fetch from Yahoo Finance
-        try:
-            ticker = yf.Ticker(symbol)
+        # Fetch from Yahoo Finance with retry
+        for attempt in range(3):
+            try:
+                ticker = yf.Ticker(symbol)
 
-            if start_date and end_date:
-                df = ticker.history(start=start_date, end=end_date, interval=interval)
-            else:
-                df = ticker.history(period=period, interval=interval)
+                if start_date and end_date:
+                    df = ticker.history(start=start_date, end=end_date, interval=interval)
+                else:
+                    df = ticker.history(period=period, interval=interval)
 
-            if df.empty:
-                logger.warning(f"No data found for {symbol}")
-                return None
+                if df.empty:
+                    # Try with .BO suffix if .NS failed
+                    if symbol.endswith('.NS'):
+                        alt_symbol = symbol.replace('.NS', '.BO')
+                        ticker = yf.Ticker(alt_symbol)
+                        df = ticker.history(period=period, interval=interval)
 
-            # Clean up column names
-            df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
+                if df.empty:
+                    if attempt < 2:
+                        logger.warning(f"Attempt {attempt + 1}: No data for {symbol}, retrying...")
+                        time.sleep(0.5 * (attempt + 1))
+                        continue
+                    logger.warning(f"No data found for {symbol}")
+                    return None
 
-            # Cache the data
-            if self.use_cache and self.cache:
-                self.cache.save_price_data(symbol, df)
+                # Clean up column names
+                df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
 
-            return df
+                # Cache the data
+                if self.use_cache and self.cache:
+                    self.cache.save_price_data(symbol, df)
 
-        except Exception as e:
-            logger.error(f"Error fetching data for {symbol}: {e}")
-            return None
+                return df
+
+            except Exception as e:
+                logger.warning(f"Attempt {attempt + 1} failed for {symbol}: {e}")
+                if attempt < 2:
+                    time.sleep(0.5 * (attempt + 1))
+                continue
+
+        return None
 
     def get_stock_info(self, symbol: str) -> Optional[Dict[str, Any]]:
         """
@@ -123,42 +159,45 @@ class StockDataFetcher:
                 return cached_info
 
         # Try NSE first, then BSE
-        suffixes_to_try = ['.NS', '.BO'] if symbol.endswith('.NS') else [symbol[-3:], '.NS', '.BO']
         base_symbol = symbol.replace('.NS', '').replace('.BO', '')
+        suffixes_to_try = ['.NS', '.BO']
 
         for suffix in suffixes_to_try:
-            try_symbol = base_symbol + suffix if not base_symbol.endswith(suffix) else base_symbol
+            try_symbol = base_symbol + suffix
 
-            try:
-                ticker = yf.Ticker(try_symbol)
-                info = ticker.info
+            for attempt in range(3):  # Retry up to 3 times
+                try:
+                    ticker = yf.Ticker(try_symbol)
+                    info = ticker.info
 
-                # Check if we got valid data
-                if not info or not isinstance(info, dict):
+                    # Check if we got valid data
+                    if not info or not isinstance(info, dict):
+                        continue
+
+                    # Check for common fields that indicate valid stock data
+                    has_valid_data = any(key in info for key in [
+                        'shortName', 'longName', 'currentPrice',
+                        'regularMarketPrice', 'previousClose', 'marketCap',
+                        'regularMarketOpen', 'dayHigh', 'dayLow'
+                    ])
+
+                    if not has_valid_data:
+                        break  # Try next suffix
+
+                    # Valid data found
+                    logger.info(f"Found valid data for {try_symbol}")
+
+                    # Cache the info
+                    if self.use_cache and self.cache:
+                        self.cache.save_info(symbol, info)
+
+                    return info
+
+                except Exception as e:
+                    logger.warning(f"Attempt {attempt + 1} for {try_symbol} failed: {e}")
+                    if attempt < 2:
+                        time.sleep(0.5 * (attempt + 1))  # Wait before retry
                     continue
-
-                # Check for common fields that indicate valid stock data
-                has_valid_data = any(key in info for key in [
-                    'shortName', 'longName', 'currentPrice',
-                    'regularMarketPrice', 'previousClose', 'marketCap',
-                    'regularMarketOpen', 'dayHigh', 'dayLow'
-                ])
-
-                if not has_valid_data:
-                    continue
-
-                # Valid data found
-                logger.info(f"Found valid data for {try_symbol}")
-
-                # Cache the info
-                if self.use_cache and self.cache:
-                    self.cache.save_info(symbol, info)
-
-                return info
-
-            except Exception as e:
-                logger.warning(f"Error trying {try_symbol}: {e}")
-                continue
 
         logger.error(f"Could not find valid data for {symbol}")
         return None
