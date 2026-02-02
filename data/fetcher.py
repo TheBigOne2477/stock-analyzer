@@ -97,46 +97,54 @@ class StockDataFetcher:
                 logger.info(f"Using cached data for {symbol}")
                 return cached_data
 
-        # Fetch from Yahoo Finance with retry
-        for attempt in range(3):
+        # Method 1: Try yf.download (more reliable on cloud)
+        for attempt in range(2):
             try:
-                ticker = yf.Ticker(symbol)
+                logger.info(f"Trying yf.download for {symbol} (attempt {attempt + 1})")
+                df = yf.download(symbol, period=period, interval=interval, progress=False, timeout=10)
 
-                if start_date and end_date:
-                    df = ticker.history(start=start_date, end=end_date, interval=interval)
-                else:
-                    df = ticker.history(period=period, interval=interval)
+                if df.empty and symbol.endswith('.NS'):
+                    # Try BSE
+                    alt_symbol = symbol.replace('.NS', '.BO')
+                    df = yf.download(alt_symbol, period=period, interval=interval, progress=False, timeout=10)
 
-                if df.empty:
-                    # Try with .BO suffix if .NS failed
-                    if symbol.endswith('.NS'):
-                        alt_symbol = symbol.replace('.NS', '.BO')
-                        ticker = yf.Ticker(alt_symbol)
-                        df = ticker.history(period=period, interval=interval)
+                if not df.empty:
+                    # Clean up column names (yf.download may have MultiIndex)
+                    if isinstance(df.columns, pd.MultiIndex):
+                        df.columns = df.columns.get_level_values(0)
+                    df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
 
-                if df.empty:
-                    if attempt < 2:
-                        logger.warning(f"Attempt {attempt + 1}: No data for {symbol}, retrying...")
-                        time.sleep(0.5 * (attempt + 1))
-                        continue
-                    logger.warning(f"No data found for {symbol}")
-                    return None
-
-                # Clean up column names
-                df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
-
-                # Cache the data
-                if self.use_cache and self.cache:
-                    self.cache.save_price_data(symbol, df)
-
-                return df
+                    if self.use_cache and self.cache:
+                        self.cache.save_price_data(symbol, df)
+                    return df
 
             except Exception as e:
-                logger.warning(f"Attempt {attempt + 1} failed for {symbol}: {e}")
-                if attempt < 2:
-                    time.sleep(0.5 * (attempt + 1))
-                continue
+                logger.warning(f"yf.download attempt {attempt + 1} failed: {e}")
+                time.sleep(1)
 
+        # Method 2: Fallback to Ticker.history
+        for attempt in range(2):
+            try:
+                logger.info(f"Trying Ticker.history for {symbol} (attempt {attempt + 1})")
+                ticker = yf.Ticker(symbol)
+                df = ticker.history(period=period, interval=interval)
+
+                if df.empty and symbol.endswith('.NS'):
+                    alt_symbol = symbol.replace('.NS', '.BO')
+                    ticker = yf.Ticker(alt_symbol)
+                    df = ticker.history(period=period, interval=interval)
+
+                if not df.empty:
+                    df = df[['Open', 'High', 'Low', 'Close', 'Volume']]
+                    if self.use_cache and self.cache:
+                        self.cache.save_price_data(symbol, df)
+                    return df
+
+            except Exception as e:
+                logger.warning(f"Ticker.history attempt {attempt + 1} failed: {e}")
+                time.sleep(1)
+
+        logger.error(f"All methods failed for {symbol}")
         return None
 
     def get_stock_info(self, symbol: str) -> Optional[Dict[str, Any]]:
@@ -198,6 +206,23 @@ class StockDataFetcher:
                     if attempt < 2:
                         time.sleep(0.5 * (attempt + 1))  # Wait before retry
                     continue
+
+        # Fallback: Try to get at least price data using yf.download
+        try:
+            logger.info(f"Trying fallback yf.download for info on {symbol}")
+            df = yf.download(symbol, period='5d', progress=False, timeout=10)
+            if not df.empty:
+                # Create minimal info from price data
+                latest_price = df['Close'].iloc[-1]
+                return {
+                    'symbol': symbol,
+                    'shortName': symbol.replace('.NS', '').replace('.BO', ''),
+                    'currentPrice': float(latest_price),
+                    'regularMarketPrice': float(latest_price),
+                    'previousClose': float(df['Close'].iloc[-2]) if len(df) > 1 else float(latest_price),
+                }
+        except Exception as e:
+            logger.warning(f"Fallback also failed: {e}")
 
         logger.error(f"Could not find valid data for {symbol}")
         return None
